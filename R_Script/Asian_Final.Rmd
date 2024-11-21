@@ -1,0 +1,497 @@
+---
+title: "Asian_Final"
+author: "Sayan_Patra"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## R Markdown
+
+## Loading the data file.
+
+```{r}
+counts <- read.csv('modified_count_with_gene_name.csv')   # reading the csv file
+rownames(counts) <- make.unique(counts$Symbol)   # setting the gene name as row name
+counts$Symbol <- NULL                            # Removing the symbol name from the matrix as it is fixed as row name
+```
+
+## Checking the data.
+
+```{r}
+# Number of columnn in the data
+ncol(counts)
+
+# Number of features in the column
+nrow(counts)
+```
+# Reading the metadata
+
+```{r}
+metadata<-read.csv('MODIFIED_meta_SRP301424.csv', row.names = 1)    # reading the metadata
+```
+
+```{r}
+# Number of columns in the metadata
+ncol(metadata)
+
+# Number of rows in the metadata
+nrow(metadata)
+```
+
+# Reading the column names in the metadata
+```{r}
+colnames(metadata)
+```
+# I am interested in the medulloblastoma.subgroup column
+
+```{r}
+metadata$medulloblastoma.subgroup
+```
+# I am interested in the tissue column
+
+```{r}
+metadata$tissue
+```
+# The medulloblastoma.subgroup represents the Normal tissues as n/a (NORM). I have to convert it into Normal only. Let's do it..............
+
+```{r}
+# I am using the gsub command for it.
+metadata$medulloblastoma.subgroup <- gsub( "n/a \\(NORM\\)", "Normal", metadata$medulloblastoma.subgroup)
+
+# Let's see
+metadata$medulloblastoma.subgroup
+```
+# Now I am going to run the DESeq2 for Differential gene expression analysis
+
+```{r}
+dds_group <- DESeqDataSetFromMatrix(countData = counts,
+                                    colData = metadata,
+                                    design = ~medulloblastoma.subgroup,
+                                    )
+                                    smallestGroupSize <- 3  # removing the group if it has less than three column
+smallestGroupSize <- 3
+keep <- rowSums(counts(dds_group)>= 10) >= smallestGroupSize   #  whether the rows have 10 element and each group has 3 column
+dds_group <- dds_group[keep,] # Keeping only above rows
+```
+# Running the DESEQ
+
+```{r}
+dds_group_01 <- DESeq(dds_group)
+```
+# Plotting the PCA.
+
+# I have to ready the PCA dataset first
+
+```{r}
+# data processing for PCA
+vsd <- vst(dds_group_01, blind = F)
+
+# Plotting the PCA
+pca_plot_group <- plotPCA(vsd, intgroup = c("medulloblastoma.subgroup"))
+
+## ggplot modifications for aesthetic view
+pca <- pca_plot_group+
+  geom_point(aes(color = 'medulloblastoma.subgroup'),shape=21, size=3, stroke=0.5, color = 'black')
+ggsave(filename = "Plots/PCA_Actual.png",
+       plot = pca,
+       dpi = 500)
+pca
+```
+```{r}
+# Extract results for WNT vs Normal comparison
+res_subgroup1 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "WNT", "Normal"))
+
+# Remove rows with NA values in padj
+res_filtered1 <- res_subgroup1[!is.na(res_subgroup1$padj), ]
+
+# Filter significant genes based on adjusted p-value
+genes_subgroup1 <- rownames(res_filtered1[res_filtered1$padj < 0.05, ])
+
+# Extract results for WNT vs Normal comparison
+res_subgroup2 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "SHH", "Normal"))
+
+# Remove rows with NA values in padj
+res_filtered2 <- res_subgroup2[!is.na(res_subgroup2$padj), ]
+
+# Filter significant genes based on adjusted p-value
+genes_subgroup2 <- rownames(res_filtered2[res_filtered2$padj < 0.05, ])
+
+
+# Extract results for WNT vs Normal comparison
+res_subgroup3 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "Group3", "Normal"))
+
+# Remove rows with NA values in padj
+res_filtered3 <- res_subgroup3[!is.na(res_subgroup3$padj), ]
+
+# Filter significant genes based on adjusted p-value
+genes_subgroup3 <- rownames(res_filtered3[res_filtered3$padj < 0.05, ])
+
+# Extract results for WNT vs Normal comparison
+res_subgroup4 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "Group4", "Normal"))
+
+# Remove rows with NA values in padj
+res_filtered4 <- res_subgroup4[!is.na(res_subgroup4$padj), ]
+
+# Filter significant genes based on adjusted p-value
+genes_subgroup4 <- rownames(res_filtered4[res_filtered4$padj < 0.05, ])
+
+
+
+gene_list <- list(
+  WNT = genes_subgroup1,
+  SHH = genes_subgroup2,
+  Group3 = genes_subgroup3,
+  Group4 = genes_subgroup4
+  # Add other subgroups...
+)
+
+
+if (!dir.exists("Plots")) {
+  dir.create("Plots")
+}
+
+png(filename = "Plots/Upset_Plot.png", width = 10, height = 8, units = "in", res = 512)
+
+upset(fromList(gene_list),
+      sets.bar.color = "blue",       # Color for the set size bars
+      main.bar.color = "orange",     # Color for the intersection bars
+      matrix.color = "black",      # Color for the matrix (intersection combinations)
+      order.by = "freq")
+
+dev.off()  # Close the graphics device
+```
+
+
+# Now Viewing results of the gene expression
+
+```{r}
+resultsNames(dds_group_01)
+```
+# Now generating the statistical significant genes
+
+# for Normal vs Group 3
+
+```{r}
+Norm_vs_gr3 <- results(dds_group_01, name = "medulloblastoma.subgroup_Normal_vs_Group3")
+
+Norm_vs_gr3
+```
+# Looking into the P-value of the data
+```{r}
+hist(Norm_vs_gr3$pvalue,
+     xlab = "Normal Vs Group3 P-Value",
+     ylab = "Gene Count",
+     main = "Number of Gene Vs P-Value in Normal vs Group3")
+```
+# taking the padj = 0.05 
+```{r}
+Norm_vs_gr3_padj <- Norm_vs_gr3 %>% as.data.frame() %>% dplyr::filter(padj <0.05) %>% dplyr::arrange(padj)
+Norm_vs_gr3_padj
+```
+# I am interested in upregulated and downregulated genes. Hence will set the cut off of log2FoldChange more than 1.5
+
+# Upregulated genes
+
+```{r}
+Norm_vs_gr3_up <- Norm_vs_gr3_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+Norm_vs_gr3_up
+```
+#Saving the upregulted in group 3 
+```{r}
+write.csv(Norm_vs_gr3_up, "Upregulated in Normal in Norm vs Gr3.csv", row.names = T)
+```
+
+```{r}
+plotCounts(dds_group_01, gene="ZP2", intgroup = "medulloblastoma.subgroup")
+```
+# Downregulated Proteins
+
+```{r}
+Norm_vs_gr3_down <- Norm_vs_gr3_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+Norm_vs_gr3_down
+```
+# Saving the downregulated in Norm vs Group 3
+```{r}
+write.csv(Norm_vs_gr3_down, "Downregulated in Normal in Norm vs Gr3.csv", row.names = T)
+```
+
+# Normal vs WNT
+```{r}
+Norm_vs_wnt <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "Normal","WNT"))
+Norm_vs_wnt
+```
+```{r}
+Norm_vs_wnt_padj <- Norm_vs_wnt %>% as.data.frame() %>% dplyr::filter(padj <0.05) %>% dplyr::arrange(padj)
+
+Norm_vs_wnt_padj
+```
+```{r}
+Norm_vs_wnt_up <- Norm_vs_wnt_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+Norm_vs_wnt_up
+```
+```{r}
+write.csv(Norm_vs_wnt_up, "Upregulated in Normal in Normal vs WNT.csv", row.names = T)
+```
+
+# Downregulated in Normal vs WNT
+```{r}
+Norm_vs_wnt_down <- Norm_vs_wnt_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+Norm_vs_wnt_down
+```
+```{r}
+write.csv(Norm_vs_wnt_down, "Downregulated in Normal in Normal vs wnt.csv", row.names = T)
+```
+
+```{r}
+Norm_vs_shh <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "Normal","SHH"))
+Norm_vs_shh
+```
+```{r}
+Norm_vs_shh_padj <- Norm_vs_shh %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+Norm_vs_shh_padj
+```
+```{r}
+Norm_vs_shh_up <- Norm_vs_shh_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+Norm_vs_shh_up
+```
+```{r}
+write.csv(Norm_vs_shh_up, "Upregulated in Normal in Norm vs SHH.csv", row.names = T)
+```
+
+```{r}
+Norm_vs_shh_down <- Norm_vs_shh_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange((log2FoldChange))
+Norm_vs_shh_down
+```
+```{r}
+write.csv(Norm_vs_shh_down,"Downregulated in Normal in Norm vs Shh.csv", row.names = T)
+```
+
+```{r}
+Norm_vs_gr4 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "Normal", "Group4"))
+Norm_vs_gr4
+```
+```{r}
+Norm_vs_gr4_padj <- Norm_vs_gr4 %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+Norm_vs_gr4_padj
+```
+```{r}
+Norm_vs_gr4_up <- Norm_vs_gr4_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+Norm_vs_gr4_up
+```
+```{r}
+Norm_vs_gr4_down <- Norm_vs_gr4_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+Norm_vs_gr4_down
+```
+```{r}
+#up
+write.csv(Norm_vs_gr4_up, "Upregulated in Normal in Normal vs Group4.csv", row.names = T)
+#down
+write.csv(Norm_vs_gr4_down,"Downregulated in Normal in Normal vs Group 4.csv", row.names = T)
+```
+
+```{r}
+wnt_vs_shh <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "WNT", "SHH"))
+wnt_vs_shh
+```
+```{r}
+wnt_vs_shh_padj <- wnt_vs_shh %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+wnt_vs_shh_padj
+```
+```{r}
+# upregualte in wnt
+wnt_vs_shh_up <- wnt_vs_shh_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+wnt_vs_shh_up
+
+# downregulated in wnt
+wnt_vs_shh_down <- wnt_vs_shh_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+wnt_vs_shh_down
+
+```
+```{r}
+# up
+write.csv(wnt_vs_shh_up, "Upregulated in WNT in wnt vs shh.csv", row.names = T)
+
+# down
+write.csv(wnt_vs_shh_down,"Downregulated in wnt in wnt vs shh.csv", row.names = T)
+```
+
+```{r}
+wnt_vs_gr3 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "WNT", "Group3"))
+wnt_vs_gr3
+
+wnt_vs_gr3_padj <- wnt_vs_gr3 %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+wnt_vs_gr3_padj
+
+```
+```{r}
+# up
+wnt_vs_gr3_up <- wnt_vs_gr3_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+wnt_vs_gr3_up
+
+# down
+wnt_vs_gr3_down <- wnt_vs_gr3_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+wnt_vs_gr3_down
+```
+```{r}
+# up
+write.csv(wnt_vs_gr3_up, "Upregulated in WNT in wnt vs group3.csv", row.names = T)
+
+#down
+write.csv(wnt_vs_gr3_down, "Downregulated in WNT in wnt vs group3.csv", row.names = T)
+```
+
+```{r}
+wnt_vs_gr4 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "WNT", "Group4"))
+wnt_vs_gr4
+
+wnt_vs_gr4_padj <- wnt_vs_gr4 %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+wnt_vs_gr4_padj
+```
+```{r}
+# up
+wnt_vs_gr4_up <- wnt_vs_gr4_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+wnt_vs_gr4_up
+
+# down
+wnt_vs_gr4_down <- wnt_vs_gr4_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+wnt_vs_gr4_down
+```
+```{r}
+# up
+write.csv(wnt_vs_gr4_up, "Upregulated in WNT in wnt vs group4.csv", row.names = T)
+
+#down
+write.csv(wnt_vs_gr4_down, "Downregulated in WNT in wnt vs group4.csv", row.names = T)
+```
+
+
+```{r}
+plotCounts(dds_group_01, gene="LINC00879", intgroup = "medulloblastoma.subgroup")
+```
+```{r}
+shh_vs_gr3 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "SHH", "Group3"))
+shh_vs_gr3
+
+shh_vs_gr3_padj <- shh_vs_gr3 %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+shh_vs_gr3_padj
+```
+
+```{r}
+# up
+shh_vs_gr3_up <- shh_vs_gr3_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+shh_vs_gr3_up
+
+# down
+shh_vs_gr3_down <- shh_vs_gr3_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+shh_vs_gr3_down
+```
+```{r}
+# up
+write.csv(shh_vs_gr3_up, "Upregulated in SHH in Shh vs Group3.csv", row.names = T)
+
+#down
+write.csv(shh_vs_gr3_down,"Downregulated in SHH in SHH vs Group3.csv", row.names = T)
+```
+
+```{r}
+plotCounts(dds_group_01, gene="LOC105374142", intgroup = "medulloblastoma.subgroup")
+```
+```{r}
+shh_vs_gr4 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "SHH", "Group4"))
+shh_vs_gr4
+
+shh_vs_gr4_padj <- shh_vs_gr4 %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+shh_vs_gr4_padj
+```
+```{r}
+# up
+shh_vs_gr4_up <- shh_vs_gr4_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+shh_vs_gr4_up
+
+# down
+shh_vs_gr4_down <- shh_vs_gr4_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+shh_vs_gr4_down
+```
+```{r}
+# up
+write.csv(shh_vs_gr4_up, "Upregulated in SHH in Shh vs Group4.csv", row.names = T)
+
+#down
+write.csv(shh_vs_gr4_down,"Downregulated in SHH in SHH vs Group4.csv", row.names = T)
+```
+
+```{r}
+plotCounts(dds_group_01, gene="LOC105374142", intgroup = "medulloblastoma.subgroup")
+```
+```{r}
+gr3_vs_gr4 <- results(dds_group_01, contrast = c("medulloblastoma.subgroup", "Group3", "Group4"))
+gr3_vs_gr4
+
+gr3_vs_gr4_padj <- gr3_vs_gr4 %>% as.data.frame() %>% filter(padj < 0.05) %>% dplyr::arrange(padj)
+gr3_vs_gr4_padj
+```
+```{r}
+# up
+gr3_vs_gr4_up <- gr3_vs_gr4_padj %>% filter(log2FoldChange > 1.5) %>% dplyr::arrange(desc(log2FoldChange))
+gr3_vs_gr4_up
+
+# down
+gr3_vs_gr4_down <- gr3_vs_gr4_padj %>% filter(log2FoldChange < -1.5) %>% dplyr::arrange(log2FoldChange)
+gr3_vs_gr4_down
+```
+```{r}
+# up
+write.csv(gr3_vs_gr4_up, "Upregulated in Group3 in Group3 vs Group4.csv", row.names = T)
+
+#down
+write.csv(gr3_vs_gr4_down,"Downregulated in Group3 in Group3 vs Group4.csv", row.names = T)
+```
+
+```{r}
+plotCounts(dds_group_01, gene="LINC00261", intgroup = "medulloblastoma.subgroup")
+```
+
+# Correlation Matrix and Plot
+```{r, height = 100, width = 100}
+Normalized <- counts(dds_group_01, normalized = T)
+
+# Correlation Matrix
+cor_matrix <- cor(Normalized, method = "pearson")
+
+# Correlation Plot
+png(filename="Plots/03_Correlation_Plot.png", width=5000, height=5000, res=500)
+pheatmap(cor_matrix, clustering_distance_rows="correlation", clustering_distance_cols="correlation", height = 800, width = 800)
+dev.off()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

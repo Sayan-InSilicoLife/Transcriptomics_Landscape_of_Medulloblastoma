@@ -1,0 +1,271 @@
+---
+title: "Enrichment Analysis"
+author: "Sayan_Patra"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+# Enrichment in WNT compare to Normal
+```{r}
+dbs <- listEnrichrDbs()
+dbs
+```
+# Choosing Databases
+```{r}
+databases <- c("GO_Biological_Process_2021","KEGG_2021_Human","GO_Cellular_Component_2021","GO_Molecular_Function_2021")
+```
+
+# Choosing Genes
+```{r}
+norm_vs_wnt_genes <- read.csv("Downregulated in Normal in Normal vs wnt.csv", row.names = 1)
+wnt_up_genes <- as.vector(row.names(norm_vs_wnt_genes))
+
+```
+
+```{r}
+wnt_up_enrich <- enrichR::enrichr(wnt_up_genes,databases)
+wnt_up_enrich
+```
+```{r}
+wnt_up_enrich[["GO_Biological_Process_2021"]]
+```
+
+```{r}
+p1 <- plotEnrich(wnt_up_enrich$GO_Biological_Process_2021,showTerms = 20)+
+  ggtitle("Upregulated in WNT Medulloblastoma(GO:BP) ")
+p1
+
+
+ggsave(filename = "Plots/Upregulated in WNT Medulloblastoma_GO_BP.png",
+       plot = p1,
+       dpi = 500)
+```
+```{r}
+p2 <- plotEnrich(wnt_up_enrich$KEGG_2021_Human,showTerms = 20)+
+  ggtitle("Upregulated in WNT Medulloblastoma(KEGG) ")
+p2
+
+
+ggsave(filename = "Plots/Upregulated in WNT Medulloblastoma_KEGG.png",
+       plot = p2,
+       dpi = 500)
+```
+
+
+```{r}
+norm_vs_wnt_down_genes <- read.csv("Upregulated in Normal in Normal vs WNT.csv", row.names = 1)
+wnt_down_genes <- as.vector(row.names(norm_vs_wnt_down_genes))
+```
+
+```{r}
+wnt_down_enrich <- enrichR::enrichr(wnt_down_genes,databases)
+wnt_down_enrich 
+```
+```{r}
+p3 <- plotEnrich(wnt_down_enrich$GO_Biological_Process_2021,showTerms = 20)+
+  ggtitle("Downregulated in WNT Medulloblastoma (GO:BP) ")
+p3
+
+ggsave(filename = "Downregulated in WNT Medulloblastoma_Go_bp.png",
+       plot = p3,
+       dpi = 500)
+
+```
+```{r}
+p4 <- plotEnrich(wnt_down_enrich$KEGG_2021_Human,showTerms = 20)+
+  ggtitle("Downregulated in WNT Medulloblastoma (KEGG) ")
+p4
+
+ggsave(filename = "Downregulated in WNT Medulloblastoma_Kegg.png",
+       plot = p4,
+       dpi = 500)
+```
+
+
+```{r}
+Norm_vs_shh_up <- read.csv("Downregulated in Normal in Norm vs Shh.csv", row.names = 1)
+shh_up_genes <- as.vector(row.names(Norm_vs_shh_up))
+```
+
+```{r}
+shh_up_enrich <- enrichR::enrichr(shh_up_genes,databases)
+shh_up_enrich
+```
+
+```{r}
+p5 <- plotEnrich(shh_up_enrich$GO_Biological_Process_2021,showTerms = 20)+
+  ggtitle("Upregulated in SHH Medulloblastoma(GO:BP) ")
+p5
+
+ggsave(filename = "Upregulated in SHH Medulloblastoma_GOBP.png",
+       plot = p5,
+       dpi = 500)
+```
+```{r}
+p6 <- plotEnrich(shh_up_enrich$KEGG_2021_Human,showTerms = 20)+
+  ggtitle("Upregulated in SHH Medulloblastoma(Kegg) ")
+p6
+
+ggsave(filename = "Upregulated in SHH Medulloblastoma_Kegg.png",
+       plot = p6,
+       dpi = 500)
+
+```
+
+```{r}
+Norm_vs_shh_down <- read.csv("Upregulated in Normal in Norm vs SHH.csv", row.names = 1)
+shh_down_genes <- as.vector(row.names(Norm_vs_shh_down))
+```
+
+```{r}
+shh_down_enrich <- enrichR::enrichr(shh_down_genes, databases)
+shh_down_enrich
+```
+
+
+```{r}
+p7 <- plotEnrich(shh_down_enrich$GO_Biological_Process_2021,showTerms = 20)+
+  ggtitle("Downregulated in SHH Medulloblastoma(GO:BP) ")
+p7
+ggsave(filename = "Downregulated in SHH Medulloblastoma_GOBP.png",
+       plot = p7,
+       dpi = 500)
+
+```
+```{r}
+p8 <- plotEnrich(shh_down_enrich$KEGG_2021_Human,showTerms = 20)+
+  ggtitle("Downregulated in SHH Medulloblastoma(Kegg) ")
+p8
+ggsave(filename = "Downregulated in SHH Medulloblastoma_kegg.png",
+       plot = p8,
+       dpi = 500)
+
+```
+
+```{r}
+Norm_vs_gr3_up <- read.csv("Downregulated in Normal in Norm vs Gr3.csv", row.names = 1)
+group3_up_genes <- as.vector(row.names(Norm_vs_gr3_up))
+```
+
+```{r}
+Group3_up_enrich <- enrichR::enrichr(group3_up_genes, databases)
+Group3_up_enrich
+```
+```{r}
+p9 <- plotEnrich(Group3_up_enrich$GO_Biological_Process_2021, showTerms = 20)+
+  ggtitle("Upregulated in Group3 Medulloblastoma(GO:BP) ")
+p9
+ggsave(filename = "Upregulated in Group3 Medulloblastoma_GOBP.png",
+       plot = p9,
+       dpi = 500)
+```
+```{r}
+p10 <- plotEnrich(Group3_up_enrich$KEGG_2021_Human, showTerms = 20)+
+  ggtitle("Upregulated in Group3 Medulloblastoma(kegg) ")
+p10
+ggsave(filename = "Upregulated in Group3 Medulloblastoma_kegg.png",
+       plot = p10,
+       dpi = 500)
+
+```
+
+```{r}
+Norm_vs_group3_down <- read.csv("Upregulated in Normal in Norm vs Gr3.csv", row.names = 1)
+group3_down_genes <- as.vector(row.names(Norm_vs_group3_down))
+
+Group3_down_enrich <- enrichR::enrichr(group3_down_genes,databases)
+Group3_down_enrich
+
+p11 <- plotEnrich(Group3_down_enrich$GO_Biological_Process_2021, showTerms = 20)+
+  ggtitle("Downregulated in Group3 Medulloblastoma(GO:BP) ")
+p11
+ggsave(filename = "Downregulated in Group3 Medulloblastoma_GOBP.png",
+       plot = p11,
+       dpi = 500)
+
+p12 <- plotEnrich(Group3_down_enrich$KEGG_2021_Human, showTerms = 20)+
+  ggtitle("Downregulated in Group3 Medulloblastoma(kegg) ")
+p12
+ggsave(filename = "Downregulated in Group3 Medulloblastoma_kegg.png",
+       plot = p12,
+       dpi = 500)
+```
+```{r}
+Norm_vs_group4_up <- read.csv("Downregulated in Normal in Normal vs Group 4.csv", row.names = 1)
+group4_up_genes <- as.vector(row.names(Norm_vs_group4_up))
+
+Group4_up_enrich <- enrichR::enrichr(group4_up_genes,databases)
+Group4_up_enrich
+
+p13 <- plotEnrich(Group4_up_enrich$GO_Biological_Process_2021, showTerms = 20)+
+  ggtitle("Upregulated in Group4 Medulloblastoma(GO:BP) ")
+p13
+ggsave(filename = "Upregulated in Group4 Medulloblastoma_GOBP.png",
+       plot = p13,
+       dpi = 500)
+
+p14 <- plotEnrich(Group4_up_enrich$KEGG_2021_Human, showTerms = 20)+
+  ggtitle("Upregulated in Group4 Medulloblastoma(kegg) ")
+p14
+ggsave(filename = "Upregulated in Group4 Medulloblastoma_kegg.png",
+       plot = p14,
+       dpi = 500)
+
+```
+```{r}
+Norm_vs_group4_down <- read.csv("Upregulated in Normal in Normal vs Group4.csv", row.names = 1)
+group4_down_genes <- as.vector(row.names(Norm_vs_group4_down))
+
+Group4_down_enrich <- enrichR::enrichr(group4_down_genes,databases)
+Group4_down_enrich
+
+p15 <- plotEnrich(Group4_down_enrich$GO_Biological_Process_2021, showTerms = 20)+
+  ggtitle("Downregulated in Group4 Medulloblastoma(GO:BP) ")
+p15
+ggsave(filename = "Downregulated in Group4 Medulloblastoma_GOBP.png",
+       plot = p15,
+       dpi = 500)
+
+p16 <- plotEnrich(Group4_down_enrich$KEGG_2021_Human, showTerms = 20)+
+  ggtitle("Downregulated in Group4 Medulloblastoma(kegg) ")
+p16
+ggsave(filename = "Downregulated in Group4 Medulloblastoma_kegg.png",
+       plot = p16,
+       dpi = 500)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

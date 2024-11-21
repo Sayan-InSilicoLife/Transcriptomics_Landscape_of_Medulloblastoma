@@ -1,0 +1,171 @@
+---
+title: "Heatmap"
+author: "Sayan_Patra"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+wnt_up_file <- read.csv("Downregulated in Normal in Normal vs wnt.csv")
+
+shh_up_file <- read.csv("Downregulated in Normal in Norm vs Shh.csv")
+  
+gr3_up_file <- read.csv("Downregulated in Normal in Norm vs Gr3.csv")
+
+gr4_up_file <- read.csv("Downregulated in Normal in Normal vs Group 4.csv")
+
+```
+
+```{r}
+wnt_up_file
+```
+
+```{r}
+wnt_top_20 <- wnt_up_file[c(1,3)]
+wnt_top_20
+
+shh_top_20 <- shh_up_file[c(1,3)]
+shh_top_20
+
+gr3_top_20 <- gr3_up_file[c(1,3)]
+gr3_top_20
+
+gr4_top_20 <- gr4_up_file[c(1,3)]
+gr4_top_20
+
+```
+```{r}
+merged_top <- wnt_top_20 %>%
+  full_join(shh_top_20, by = "X") %>%
+  full_join(gr3_top_20, by = "X") %>%
+  full_join(gr4_top_20, by = "X")
+
+merged_top[is.na(merged_top)] <- 0
+colnames(merged_top) <- c("Genes", "WNT_Upregulated", "SHH_Upregulated","Group3_Upregulated","Group4_Upregulated")
+
+merged_top
+```
+
+# Heatmap
+
+```{r}
+write.csv(merged_top, "Upregulated Proteins in All groups.csv")
+```
+
+
+```{r}
+wnt_down_file <- read.csv("Upregulated in Normal in Normal vs WNT.csv")
+
+shh_down_file <- read.csv("Upregulated in Normal in Norm vs SHH.csv")
+  
+gr3_down_file <- read.csv("Upregulated in Normal in Norm vs Gr3.csv")
+
+gr4_down_file <- read.csv("Upregulated in Normal in Normal vs Group4.csv")
+
+```
+
+```{r}
+wnt_down_20 <- wnt_down_file[c(1,3)]
+wnt_down_20
+
+shh_down_20 <- shh_down_file[c(1,3)]
+shh_down_20
+
+gr3_down_20 <- gr3_down_file[c(1,3)]
+gr3_down_20
+
+gr4_down_20 <- gr4_down_file[c(1,3)]
+gr4_down_20
+
+```
+```{r}
+
+merged_down <- wnt_down_20 %>%
+  full_join(shh_down_20, by = "X") %>%
+  full_join(gr3_down_20, by = "X") %>%
+  full_join(gr4_down_20, by = "X")
+
+merged_down[is.na(merged_down)] <- 0
+colnames(merged_down) <- c("Genes", "WNT_Downregulated", "SHH_Downregulated","Group3_Downregulated","Group4_Downregulated")
+
+merged_down
+```
+```{r}
+write.csv(merged_down, "Down Regulated in All Groups.csv")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
